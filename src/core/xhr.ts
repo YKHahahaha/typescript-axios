@@ -8,10 +8,10 @@ import { isFormData } from '../helpers/util'
 export default function xhr(config: AxiosRequestConfig): AxiosPromise {
   return new Promise((resolve, reject) => {
     const {
-      url,
-      method = 'get',
       data = null,
-      headers,
+      url,
+      method,
+      headers = {},
       responseType,
       timeout,
       cancelToken,
@@ -26,7 +26,7 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromise {
 
     const ajaxRequest = new XMLHttpRequest()
 
-    ajaxRequest.open(method.toUpperCase(), url!, true)
+    ajaxRequest.open(method!.toUpperCase(), url!, true)
 
     configureRequest()
 
@@ -54,44 +54,41 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromise {
 
     function addEvents(): void {
       ajaxRequest.onreadystatechange = function() {
+        if (ajaxRequest.readyState !== 4) {
+          return
+        }
         if (ajaxRequest.status === 0) {
           return
         }
-        if (ajaxRequest.readyState === 4) {
-          const responseHeaders = parseHeaders(ajaxRequest.getAllResponseHeaders())
-          const responseData =
-            responseType && responseType !== 'text'
-              ? ajaxRequest.response
-              : ajaxRequest.responseText
-          const response: AxiosResponse = {
-            data: responseData,
-            status: ajaxRequest.status,
-            statusText: ajaxRequest.statusText,
-            headers: responseHeaders,
-            config,
-            ajaxRequest
-          }
-          handleResponse(response)
+        const responseHeaders = parseHeaders(ajaxRequest.getAllResponseHeaders())
+        const responseData =
+          responseType && responseType !== 'text' ? ajaxRequest.response : ajaxRequest.responseText
+        const response: AxiosResponse = {
+          data: responseData,
+          status: ajaxRequest.status,
+          statusText: ajaxRequest.statusText,
+          headers: responseHeaders,
+          config,
+          ajaxRequest
         }
+        handleResponse(response)
       }
+    }
 
-      ajaxRequest.onerror = function() {
-        reject(createError('Network Error', config, null, ajaxRequest))
-      }
+    ajaxRequest.onerror = function handleError() {
+      reject(createError('Network Error', config, null, ajaxRequest))
+    }
 
-      ajaxRequest.ontimeout = function() {
-        reject(
-          createError(`Timeout of ${timeout} ms exceeded`, config, 'ECONNABORTED', ajaxRequest)
-        )
-      }
+    ajaxRequest.ontimeout = function handleTimeout() {
+      reject(createError(`Timeout of ${timeout} ms exceeded`, config, 'ECONNABORTED', ajaxRequest))
+    }
 
-      if (onDownloadProgress) {
-        ajaxRequest.onprogress = onDownloadProgress
-      }
+    if (onDownloadProgress) {
+      ajaxRequest.onprogress = onDownloadProgress
+    }
 
-      if (onUploadProgress) {
-        ajaxRequest.upload.onprogress = onUploadProgress
-      }
+    if (onUploadProgress) {
+      ajaxRequest.upload.onprogress = onUploadProgress
     }
 
     function processHeaders(): void {
@@ -128,7 +125,7 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromise {
       }
     }
 
-    function handleResponse(response: AxiosResponse) {
+    function handleResponse(response: AxiosResponse): void {
       if (!validateStatus || validateStatus(response.status)) {
         resolve(response)
       } else {

@@ -31,6 +31,7 @@ export interface AxiosRequestConfig {
   onDownloadProgress?: (e: ProgressEvent) => void
   onUploadProgress?: (e: ProgressEvent) => void
   auth?: AxiosBasicCredentials
+  validateStatus?: (status: number) => boolean
   paramsSerializer?: (params: any) => string
   baseURL?: string
 
@@ -96,13 +97,14 @@ export interface AxiosStatic extends AxiosInstance {
 }
 
 export interface ResolvedFn<T> {
-  (config: T): T
+  (val: T): T | Promise<T>
 }
 export interface RejectedFn {
   (error: any): any
 }
 export interface AxiosInterceptorManager<T> {
   use(resolved: ResolvedFn<T>, rejected?: RejectedFn): number
+
   eject(id: number): void
 }
 
@@ -135,12 +137,12 @@ export interface CancelTokenStatic {
   source(): CancelTokenSource
 }
 
-export interface Cancel {
-  message?: string
-}
-
 export interface CancelStatic {
   new (message?: string): Cancel
+}
+
+export interface Cancel {
+  message?: string
 }
 
 export interface AxiosBasicCredentials {
