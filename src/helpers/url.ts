@@ -32,19 +32,19 @@ export function buildURL(
   } else if (isURLSearchParams(params)) {
     serializedParams = params.toString()
   } else {
-    const parts: Array<string> = []
-
+    const parts: string[] = []
+    
     Object.keys(params).forEach(key => {
-      let value = params[key]
-      if (value === null || typeof value === undefined) {
+      let val = params[key]
+      if (val === null || typeof val === undefined) {
         return
       }
       let values: Array<string>
-      if (Array.isArray(value)) {
-        values = value
+      if (Array.isArray(val)) {
+        values = val
         key += '[]'
       } else {
-        values = [value]
+        values = [val]
       }
       values.forEach(ele => {
         if (isDate(ele)) {
